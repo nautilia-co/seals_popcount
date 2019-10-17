@@ -42,10 +42,12 @@ random.seed(seed)
 with open('with_seals.csv', 'r') as f:
     reader = csv.reader(f)
     with_seals = list(reader)
+    random.shuffle(with_seals)
 
 with open('without_seals.csv', 'r') as f:
     reader = csv.reader(f)
     without_seals = list(reader)
+    random.shuffle(without_seals)
 
 dataset_size = 25000
 data_variety_ratio = 0.6  # with seals / without seals
@@ -70,10 +72,10 @@ print('Training: ' + str(len(partition['train'])))
 print('Validation: ' + str(len(partition['validation'])))
 print('Test: ' + str(len(partition['test'])))
 
-batch_size = 10
-generator_train = ExtractsGenerator(data_path=data_path, dataset=partition['train'], batch_size=batch_size)
-generator_test = ExtractsGenerator(data_path=data_path, dataset=partition['test'], batch_size=batch_size)
-generator_validation = ExtractsGenerator(data_path=data_path, dataset=partition['validation'], batch_size=batch_size)
+batch_size = 256
+generator_train = ExtractsGenerator(data_path=data_path, dataset=partition['train'])
+generator_test = ExtractsGenerator(data_path=data_path, dataset=partition['test'])
+generator_validation = ExtractsGenerator(data_path=data_path, dataset=partition['validation'])
 
 # Setting model parameters
 n = 6

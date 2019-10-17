@@ -48,46 +48,48 @@ def get_data(dataset_path, filename, width, r):
         elif 60 < R < 120 and b < 50 and g < 75:  # BROWN
             res[x1, y1, 2] += 1
 
-    ma = cv2.cvtColor((1*(np.sum(image_1, axis=2)>20)).astype('uint8'), cv2.COLOR_GRAY2BGR)
+    ma = cv2.cvtColor((1*(np.sum(image_1, axis=2) > 20)).astype('uint8'), cv2.COLOR_GRAY2BGR)
     img = cv2.resize(image_2 * ma, (int(w*r), int(h*r)))
     h1, w1, d = img.shape
 
     trainX = []
     trainY = []
+    indices = []
 
     for i in range(int(w1//width)):
         for j in range(int(h1//width)):
             trainY.append(res[i, j, :])
             trainX.append(img[j*width:j*width+width, i*width:i*width+width, :])
+            indices.append((i, j))
 
-    return np.array(trainX), np.array(trainY)
+    return np.array(trainX), np.array(trainY), np.array(indices)
 
 
 r = 0.6            # scale factor
 width = 256        # patch size
-dataset_path = '../nautillia_sea_lion_popcount/data/'  # TO BE SET
+dataset_path = ''  # TO BE SET
 
 # HEADER:: image_filename, index, r, colormap
 csv_with_seals = []
 csv_without_seals = []
 
 for f in listdir(dataset_path + 'Train/'):
-    print(f)
+    with open('test.log', 'a') as log:
+        log.write(f + '\n')
     if f.endswith('.jpg'):
-        images, labels = get_data(dataset_path, f, width, r)
+        images, labels, indices = get_data(dataset_path, f, width, r)
         for i, l in enumerate(labels):
+            image_id = int(f.replace('.jpg', ''))
             if np.array_equal(l, np.array([0, 0, 0, 0, 0])):
-                csv_without_seals.append((f, i, r, 'raw'))
+                csv_without_seals.append((image_id, indices[i], r, 'raw', l))
             else:
-                csv_with_seals.append((f, i, r, 'raw'))
+                csv_with_seals.append((image_id, indices[i], r, 'raw', l))
 
-print(len(csv_with_seals))
-print(len(csv_without_seals))
+with open('test.log', 'a') as log:
+    log.write('count with seals: ' + str(len(csv_with_seals)))
+    log.write('\n')
+    log.write('count without seals: ' + str(len(csv_without_seals)))
+    log.write('\n')
 
-with open('with_seals.csv', "w") as f:
-    writer = csv.writer(f)
-    writer.writerows(csv_with_seals)
-
-with open('without_seals.csv', "w") as f:
-    writer = csv.writer(f)
-    writer.writerows(csv_without_seals)
+np.save('with_seals', np.array(csv_with_seals))
+np.save('without_seals', np.array(csv_without_seals))
