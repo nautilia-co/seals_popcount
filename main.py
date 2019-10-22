@@ -95,10 +95,10 @@ lr_scheduler = LearningRateScheduler(lr_schedule)
 lr_reducer = ReduceLROnPlateau(factor=np.sqrt(0.1), cooldown=0, patience=5, min_lr=0.5e-6)
 
 # Create compile and train model
-resnet = ResNet(final_activation='sigmoid', input_shape=input_shape, n=n, output_nodes=1)
+resnet = ResNet(final_activation='softmax', input_shape=input_shape, n=n, output_nodes=2)
 model = resnet.create_model()
 callbacks = [csv_logger, checkpoint, lr_reducer, lr_scheduler]
-loss = 'binary_crossentropy'
+loss = 'categorical_crossentropy'
 
 print('Model: ' + model_type)
 print('Dataset size: ' + str(dataset_size))
@@ -106,8 +106,9 @@ print('Epochs: ' + str(epochs))
 print('loss: ' + loss)
 model.summary()
 
-opt = SGD(lr=0.0001)
-#opt = Adam(lr=lr_schedule(0), epsilon=1e-04, beta_1=0.99, beta_2=0.999)
+# opt = SGD(lr=0.0001)
+# opt = Adam(lr=lr_schedule(0), epsilon=1e-04, beta_1=0.99, beta_2=0.999)
+opt = Adam(lr=0.1)
 model.compile(loss=loss, optimizer=opt, metrics=['accuracy'])
 history = model.fit_generator(generator=generator_train, steps_per_epoch=num_batches, epochs=epochs, verbose=1,
                               validation_data=generator_validation, callbacks=callbacks)

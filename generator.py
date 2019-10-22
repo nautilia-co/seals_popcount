@@ -52,5 +52,10 @@ class ExtractsGenerator(keras.utils.Sequence):
         # Generate data
         for i, r in enumerate(rows):
             x[i, ] = np.load(r[0])[0] / 255
-            y[i] = int(r[1])
+            # label: [no seal, seal exists]
+            if int(r[1]) == 1:
+                label = [0, 1]
+            else:
+                label = [1, 0]
+            y[i] = label
         return x, y
