@@ -8,7 +8,7 @@ np.random.seed(448)
 class ExtractsGenerator(keras.utils.Sequence):
     """Generates data for Keras"""
 
-    def __init__(self, data_path, dataset, batch_size=1, x_shape=(256, 256, 3), y_size=1, shuffle=True):
+    def __init__(self, data_path, dataset, y_size, batch_size=1, x_shape=(256, 256, 3), shuffle=True):
         """Initialization"""
         self.data_path = data_path
         self.x_shape = x_shape

@@ -33,18 +33,18 @@ def lr_schedule(epoch):
     return lr
 
 
-data_path = '/Users/mahmoud/PycharmProjects/nautillia_sea_lion_popcount/'  # TO BE SET
+data_path = ''  # TO BE SET
 seed = 0
 set_random_seed(seed)
 random.seed(seed)
 
 # Setting up data generators
-with open(data_path + 'processed/data_with_seals.csv', 'r') as f:
+with open(data_path + 'data_with_seals.csv', 'r') as f:
     reader = csv.reader(f)
     with_seals = list(reader)
     random.shuffle(with_seals)
 
-with open(data_path + 'processed/data_without_seals.csv', 'r') as f:
+with open(data_path + 'data_without_seals.csv', 'r') as f:
     reader = csv.reader(f)
     without_seals = list(reader)
     random.shuffle(without_seals)
@@ -72,16 +72,17 @@ print('Training: ' + str(len(partition['train'])))
 print('Validation: ' + str(len(partition['validation'])))
 print('Test: ' + str(len(partition['test'])))
 
-batch_size = 256
-generator_train = ExtractsGenerator(data_path=data_path, dataset=partition['train'])
-generator_test = ExtractsGenerator(data_path=data_path, dataset=partition['test'])
-generator_validation = ExtractsGenerator(data_path=data_path, dataset=partition['validation'])
-
 # Setting model parameters
 n = 6
 depth = n * 9 + 2
 model_type = 'ResNet%d' % depth
 input_shape = (256, 256, 3)
+output_nodes = 2
+batch_size = 256
+
+generator_train = ExtractsGenerator(data_path=data_path, dataset=partition['train'], y_size=output_nodes)
+generator_test = ExtractsGenerator(data_path=data_path, dataset=partition['test'], y_size=output_nodes)
+generator_validation = ExtractsGenerator(data_path=data_path, dataset=partition['validation'], y_size=output_nodes)
 
 total_items = len(generator_train)
 epochs = 60
@@ -95,7 +96,7 @@ lr_scheduler = LearningRateScheduler(lr_schedule)
 lr_reducer = ReduceLROnPlateau(factor=np.sqrt(0.1), cooldown=0, patience=5, min_lr=0.5e-6)
 
 # Create compile and train model
-resnet = ResNet(final_activation='softmax', input_shape=input_shape, n=n, output_nodes=2)
+resnet = ResNet(final_activation='softmax', input_shape=input_shape, n=n, output_nodes=output_nodes)
 model = resnet.create_model()
 callbacks = [csv_logger, checkpoint, lr_reducer, lr_scheduler]
 loss = 'categorical_crossentropy'
