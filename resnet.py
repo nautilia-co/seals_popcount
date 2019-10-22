@@ -23,7 +23,8 @@ class ResNet:
     # ResNet1001| (111)| -----     | 92.39     | -----     | 95.08+-.14| ---(---)
     # ---------------------------------------------------------------------------f
 
-    def __init__(self, input_shape=(256, 256, 3), output_nodes=5, n=6):
+    def __init__(self, final_activation, input_shape=(256, 256, 3), output_nodes=5, n=6):
+        self.final_activation = final_activation
         self.input_shape = input_shape
         self.output_nodes = output_nodes
         self.depth = n * 9 + 2
@@ -155,7 +156,7 @@ class ResNet:
         x = AveragePooling2D(pool_size=2)(x)
         y = Flatten()(x)
         outputs = Dense(self.output_nodes,
-                        activation='relu',
+                        activation=self.final_activation,
                         kernel_initializer='he_normal')(y)
 
         # Instantiate model.

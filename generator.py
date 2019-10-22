@@ -8,7 +8,7 @@ np.random.seed(448)
 class ExtractsGenerator(keras.utils.Sequence):
     """Generates data for Keras"""
 
-    def __init__(self, data_path, dataset, batch_size=1, x_shape=(256, 256, 3), y_size=5, shuffle=True):
+    def __init__(self, data_path, dataset, batch_size=1, x_shape=(256, 256, 3), y_size=1, shuffle=True):
         """Initialization"""
         self.data_path = data_path
         self.x_shape = x_shape
@@ -51,26 +51,6 @@ class ExtractsGenerator(keras.utils.Sequence):
 
         # Generate data
         for i, r in enumerate(rows):
-            pass
-            image_id = r[0]
-            image_filename = str(image_id) + '.jpg'
-            image_tile_indices = int(r[1])
-            image_scaling_factor = float(r[2])
-            image_colormap = r[3]
-            image_tile_labels = r[4]
-
-            # read and rescale fullsize image
-            full_image = cv2.imread(self.data_path + "Train/" + image_filename)
-            h, w, d = full_image.shape
-            full_image = cv2.resize(full_image, (int(w * image_scaling_factor), int(h * image_scaling_factor)))
-
-            # extract image tile
-            i, j = image_tile_indices
-            width = self.x_shape[0]
-            image_tile = full_image[j * width:j * width + width, i * width:i * width + width, :]
-
-            # TODO: ADD "image_colormap" TRANSFORMATIONS
-
-            x[i, ] = image_tile / 255
-            y[i] = image_tile_labels
+            x[i, ] = np.load(r[0])[0] / 255
+            y[i] = int(r[1])
         return x, y
