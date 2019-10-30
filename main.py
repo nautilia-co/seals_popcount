@@ -1,15 +1,14 @@
 from __future__ import print_function
 import keras
-from keras.optimizers import Adam, SGD
+from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler, CSVLogger
 from keras.callbacks import ReduceLROnPlateau
-from resnet import ResNet
 import numpy as np
 import random
 from tensorflow import set_random_seed
-import csv
-import math
-from generator import ExtractsGenerator
+from utils.generator import ExtractsGenerator
+from utils.data_reader import get_data_partitions
+import os
 
 
 def lr_schedule(epoch):
@@ -34,46 +33,13 @@ def lr_schedule(epoch):
     return lr
 
 
-data_path = ''  # TO BE SET
+# Setting model parameters
+data_path = ''  # TO BE SET -- ending with /
+output_dir = ''  # TO BE SET :: empty --> current directory || ending with /
 seed = 0
 set_random_seed(seed)
 random.seed(seed)
-
 dataset_size = 18000
-data_variety_ratio = 0.6  # with seals / without seals
-count_without_seals = math.floor(dataset_size * data_variety_ratio)
-count_with_seals = math.floor(dataset_size * (1 - data_variety_ratio))
-
-# Setting up data generators
-with open(data_path + 'data_with_seals.csv', 'r') as f:
-    reader = csv.reader(f)
-    with_seals = list(reader)
-    random.shuffle(with_seals)
-    with_seals = with_seals[:count_with_seals]
-
-with open(data_path + 'data_without_seals.csv', 'r') as f:
-    reader = csv.reader(f)
-    without_seals = list(reader)
-    random.shuffle(without_seals)
-    without_seals = without_seals[:count_without_seals]
-
-dataset = with_seals + without_seals
-random.shuffle(dataset)
-
-train_test_ratio = 0.9
-validation_split = 0.2
-train_size = math.floor(train_test_ratio * len(dataset))
-validation_size = train_size * 0.2
-
-partition = dict()
-partition['train'] = dataset[:int(train_size-validation_size)]
-partition['validation'] = dataset[int(train_size-validation_size):int(train_size)]
-partition['test'] = dataset[int(train_size):]
-print('Training: ' + str(len(partition['train'])))
-print('Validation: ' + str(len(partition['validation'])))
-print('Test: ' + str(len(partition['test'])))
-
-# Setting model parameters
 n = 6
 depth = n * 9 + 2
 model_name = 'ResNet%d' % depth
@@ -81,14 +47,23 @@ input_shape = (256, 256, 3)
 output_nodes = 2
 epochs = 60
 batch_size = 16
-num_batches = int(len(partition['train'])/batch_size)
+
+# Prepare output directory
+if output_dir != '':
+    if not os.path.isdir(output_dir):
+        os.mkdir(output_dir)
 
 # Create data generators
-generator_train = ExtractsGenerator(dataset=partition['train'], batch_size=batch_size,
+partitions = get_data_partitions(seed=seed, data_path=data_path, dataset_size=dataset_size)
+print('Training: ' + str(len(partitions['train'])))
+print('Validation: ' + str(len(partitions['validation'])))
+print('Test: ' + str(len(partitions['test'])))
+
+generator_train = ExtractsGenerator(dataset=partitions['train'], batch_size=batch_size,
                                     x_shape=input_shape, y_size=output_nodes)
-generator_test = ExtractsGenerator(dataset=partition['test'], batch_size=batch_size,
+generator_test = ExtractsGenerator(dataset=partitions['test'], batch_size=batch_size,
                                    x_shape=input_shape, y_size=output_nodes)
-generator_validation = ExtractsGenerator(dataset=partition['validation'], batch_size=batch_size,
+generator_validation = ExtractsGenerator(dataset=partitions['validation'], batch_size=batch_size,
                                          x_shape=input_shape, y_size=output_nodes)
 
 # Create model
@@ -103,9 +78,9 @@ model = keras.applications.inception_resnet_v2.InceptionResNetV2(include_top=Tru
                                                                  input_shape=input_shape, pooling=None, classes=2)
 
 # Prepare model callbacks
-file_path = model.name + '_' + str(dataset_size) + '_{epoch:02d}_{val_loss:.2f}.hdf5'
+file_path = output_dir + model.name + '_' + str(dataset_size) + '_{epoch:02d}_{val_loss:.2f}.hdf5'
 checkpoint = ModelCheckpoint(file_path, monitor='val_loss', verbose=1, mode='min', save_best_only=True)
-csv_logger = CSVLogger('training.log', separator=',')
+csv_logger = CSVLogger(output_dir + 'training.log', separator=',')
 lr_scheduler = LearningRateScheduler(lr_schedule)
 lr_reducer = ReduceLROnPlateau(factor=np.sqrt(0.1), cooldown=0, patience=5, min_lr=0.5e-6)
 
@@ -118,11 +93,12 @@ print('Epochs: ' + str(epochs))
 print('loss: ' + loss)
 model.summary()
 
+steps_per_epoch = int(len(partitions['train']) / batch_size)
 # opt = SGD()
 # opt = Adam()
 opt = Adam(lr=lr_schedule(0))
 model.compile(loss=loss, optimizer=opt, metrics=['accuracy'])
-history = model.fit_generator(generator=generator_train, steps_per_epoch=num_batches, epochs=epochs, verbose=1,
+history = model.fit_generator(generator=generator_train, steps_per_epoch=steps_per_epoch, epochs=epochs, verbose=1,
                               validation_data=generator_validation, callbacks=callbacks)
 scores = model.evaluate_generator(generator=generator_test)
 print(scores)
