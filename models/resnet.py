@@ -23,12 +23,12 @@ class ResNet:
     # ResNet1001| (111)| -----     | 92.39     | -----     | 95.08+-.14| ---(---)
     # ---------------------------------------------------------------------------f
 
-    def __init__(self, final_activation, model_name, input_shape=(256, 256, 3), output_nodes=5, n=6):
+    def __init__(self, final_activation, input_shape=(256, 256, 3), output_nodes=5, n=6):
         self.final_activation = final_activation
-        self.model_name = model_name
         self.input_shape = input_shape
         self.output_nodes = output_nodes
         self.depth = n * 9 + 2
+        self.model_name = 'ResNet%d' % self.depth
 
     def _resnet_layer(self, inputs,
                       num_filters=16,

@@ -7,14 +7,16 @@ np.random.seed(448)
 class ExtractsGenerator(keras.utils.Sequence):
     """Generates data for Keras"""
 
-    def __init__(self, dataset, x_shape, y_size, batch_size, shuffle=True, normalization=255):
+    def __init__(self, dataset, x_shape, y_size, batch_size, shuffle=True, normalization=255, type='classification'):
         """Initialization"""
+        """ type: 'classification' or 'regression' """
         self.dataset = dataset
         self.x_shape = x_shape
         self.y_size = y_size
         self.batch_size = batch_size
         self.shuffle = shuffle
         self.normalization = normalization
+        self.type = type
         self.on_epoch_end()
         self.indices = None
         self.on_epoch_end()
@@ -50,13 +52,18 @@ class ExtractsGenerator(keras.utils.Sequence):
 
         # Generate data
         for i, r in enumerate(rows):
-            image = np.load(r[0])[0]
+            np_file = np.load(r[0])
+            image = np_file[0]
             if self.normalization is not None:
                 image = image / self.normalization
-            # label: [no seal, seal exists]
-            if int(r[1]) == 1:
-                label = (0, 1)
-            else:
-                label = (1, 0)
-            y[i] = label
+            if self.type == 'classification':
+                # LABELS: [no seal, seal exists]
+                if int(r[1]) == 1:
+                    label = (0, 1)
+                else:
+                    label = (1, 0)
+            elif self.type == 'regression':
+                label = np_file[1]
+            x[i, ] = image
+            y[i, ] = label
         return x, y
