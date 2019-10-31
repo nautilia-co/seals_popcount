@@ -27,69 +27,84 @@ def get_data(dataset_path, filename, width, r):
 
     h, w, d = image_2.shape
 
-    res = np.zeros((int((w*r)//width)+1, int((h*r)//width)+1, 5), dtype='int16')
+    res = np.zeros((int((w * r) // width) + 1, int((h * r) // width) + 1, 5), dtype='int16')
 
     for blob in blobs:
         # get the coordinates for each blob
         y, x, s = blob
         # get the color of the pixel from Train Dotted in the center of the blob
         b, g, R = img1[int(y)][int(x)][:]
-        x1 = int((x*r)//width)
-        y1 = int((y*r)//width)
+        x1 = int((x * r) // width)
+        y1 = int((y * r) // width)
         # decision tree to pick the class of the blob by looking at the color in Train Dotted
-        if R > 225 and b < 25 and g < 25: # RED
+        if R > 225 and b < 25 and g < 25:  # RED
             res[x1, y1, 0] += 1
-        elif R > 225 and b > 225 and g < 25: # MAGENTA
+        elif R > 225 and b > 225 and g < 25:  # MAGENTA
             res[x1, y1, 1] += 1
-        elif R < 75 and b < 50 and 150 < g < 200: # GREEN
+        elif R < 75 and b < 50 and 150 < g < 200:  # GREEN
             res[x1, y1, 4] += 1
-        elif R < 75 and  150 < b < 200 and g < 75: # BLUE
+        elif R < 75 and 150 < b < 200 and g < 75:  # BLUE
             res[x1, y1, 3] += 1
         elif 60 < R < 120 and b < 50 and g < 75:  # BROWN
             res[x1, y1, 2] += 1
 
-    ma = cv2.cvtColor((1*(np.sum(image_1, axis=2) > 20)).astype('uint8'), cv2.COLOR_GRAY2BGR)
-    img = cv2.resize(image_2 * ma, (int(w*r), int(h*r)))
+    ma = cv2.cvtColor((1 * (np.sum(image_1, axis=2) > 20)).astype('uint8'), cv2.COLOR_GRAY2BGR)
+    img = cv2.resize(image_2 * ma, (int(w * r), int(h * r)))
     h1, w1, d = img.shape
 
     trainX = []
     trainY = []
     indices = []
 
-    for i in range(int(w1//width)):
-        for j in range(int(h1//width)):
+    for i in range(int(w1 // width)):
+        for j in range(int(h1 // width)):
             trainY.append(res[i, j, :])
-            trainX.append(img[j*width:j*width+width, i*width:i*width+width, :])
             indices.append((i, j))
+
+            raw_image = cv2.imread(dataset_path + "Train/" + filename)
+            h, w, d = raw_image.shape
+            raw_image = cv2.resize(raw_image, (int(w * r), int(h * r)))
+            tile = raw_image[j * width:j * width + width, i * width:i * width + width, :]
+            trainX.append(tile)
 
     return np.array(trainX), np.array(trainY), np.array(indices)
 
 
-r = 0.6            # scale factor
-width = 256        # patch size
-dataset_path = ''  # TO BE SET
+r = 0.6  # scale factor
+width = 256  # patch size
+dataset_path = '/projets/reva/dwilson/mn_sea_lion_popcount/dataset/'  # TO BE SET
 
-# HEADER:: image_filename, index, r, colormap
-csv_with_seals = []
-csv_without_seals = []
+data_with_seals = []
+data_without_seals = []
 
 for f in listdir(dataset_path + 'Train/'):
     with open('test.log', 'a') as log:
         log.write(f + '\n')
+    print(f)
     if f.endswith('.jpg'):
         images, labels, indices = get_data(dataset_path, f, width, r)
         for i, l in enumerate(labels):
             image_id = int(f.replace('.jpg', ''))
             if np.array_equal(l, np.array([0, 0, 0, 0, 0])):
-                csv_without_seals.append((image_id, indices[i], r, 'raw', l))
+                out_path = dataset_path + 'processed_with_both_labels/without_seals/'
+                np_filename = str(image_id) + '__r_' + str(r) + '__i_' + str(indices[i][0]) \
+                              + '__j_' + str(indices[i][1])
+                x = out_path + np_filename + '.npy'
+                y = 0
+                data_without_seals.append((x, y))
             else:
-                csv_with_seals.append((image_id, indices[i], r, 'raw', l))
+                out_path = dataset_path + 'processed_with_both_labels/with_seals/'
+                np_filename = str(image_id) + '__r_' + str(r) + '__i_' + str(indices[i][0]) \
+                              + '__j_' + str(indices[i][1])
+                x = out_path + np_filename + '.npy'
+                y = 1
+                data_with_seals.append((x, y))
+            np.save(x, np.array([images[i], l]))
 
-with open('test.log', 'a') as log:
-    log.write('count with seals: ' + str(len(csv_with_seals)))
-    log.write('\n')
-    log.write('count without seals: ' + str(len(csv_without_seals)))
-    log.write('\n')
+with open(dataset_path + 'processed_with_both_labels/data_with_seals.csv', 'w') as f:
+    writer = csv.writer(f)
+    writer.writerows(data_with_seals)
 
-np.save('with_seals', np.array(csv_with_seals))
-np.save('without_seals', np.array(csv_without_seals))
+with open(dataset_path + 'processed_with_both_labels/data_without_seals.csv', 'w') as f:
+    writer = csv.writer(f)
+    writer.writerows(data_without_seals)

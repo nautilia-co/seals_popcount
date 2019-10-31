@@ -54,7 +54,7 @@ if output_dir != '':
 
 # Create data generators
 partitions = get_data_partitions(seed=seed, data_path=data_path, base_dataset_size=dataset_size,
-                                 percentage_without_seals=0, data_augmentation=True)
+                                 percentage_without_seals=0, data_augmentation=True, augmented_dataset_size=20000)
 print('Training: ' + str(len(partitions['train'])))
 print('Validation: ' + str(len(partitions['validation'])))
 print('Test: ' + str(len(partitions['test'])))
