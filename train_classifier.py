@@ -53,7 +53,7 @@ if output_dir != '':
         os.mkdir(output_dir)
 
 # Create data generators
-partitions = get_data_partitions(seed=seed, data_path=data_path, dataset_size=dataset_size)
+partitions = get_data_partitions(seed=seed, data_path=data_path, base_dataset_size=dataset_size)
 print('Training: ' + str(len(partitions['train'])))
 print('Validation: ' + str(len(partitions['validation'])))
 print('Test: ' + str(len(partitions['test'])))

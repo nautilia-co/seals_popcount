@@ -53,17 +53,18 @@ if output_dir != '':
         os.mkdir(output_dir)
 
 # Create data generators
-partitions = get_data_partitions(seed=seed, data_path=data_path, dataset_size=dataset_size, data_variety_ratio=0)
+partitions = get_data_partitions(seed=seed, data_path=data_path, base_dataset_size=dataset_size,
+                                 percentage_without_seals=0, data_augmentation=True)
 print('Training: ' + str(len(partitions['train'])))
 print('Validation: ' + str(len(partitions['validation'])))
 print('Test: ' + str(len(partitions['test'])))
 
 generator_train = ExtractsGenerator(dataset=partitions['train'], batch_size=batch_size, x_shape=input_shape,
-                                    y_size=output_nodes, normalization=None, type='regression')
+                                    y_size=output_nodes, normalization=None, task='regression')
 generator_test = ExtractsGenerator(dataset=partitions['test'], batch_size=batch_size, x_shape=input_shape,
-                                   y_size=output_nodes, normalization=None, type='regression')
+                                   y_size=output_nodes, normalization=None, task='regression')
 generator_validation = ExtractsGenerator(dataset=partitions['validation'], batch_size=batch_size, x_shape=input_shape,
-                                         y_size=output_nodes, normalization=None, type='regression')
+                                         y_size=output_nodes, normalization=None, task='regression')
 
 # Create model
 resnet = ResNet(final_activation='sigmoid', n=n,

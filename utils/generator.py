@@ -1,5 +1,7 @@
 import numpy as np
 import keras
+import utils.image_transformations as imt
+
 
 np.random.seed(448)
 
@@ -7,7 +9,8 @@ np.random.seed(448)
 class ExtractsGenerator(keras.utils.Sequence):
     """Generates data for Keras"""
 
-    def __init__(self, dataset, x_shape, y_size, batch_size, shuffle=True, normalization=255, type='classification'):
+    def __init__(self, dataset, x_shape, y_size, batch_size, shuffle=True, normalization=255,
+                 task='classification', data_augmentation=False):
         """Initialization"""
         """ type: 'classification' or 'regression' """
         self.dataset = dataset
@@ -16,7 +19,8 @@ class ExtractsGenerator(keras.utils.Sequence):
         self.batch_size = batch_size
         self.shuffle = shuffle
         self.normalization = normalization
-        self.type = type
+        self.task = task
+        self.data_augmentation = data_augmentation
         self.on_epoch_end()
         self.indices = None
         self.on_epoch_end()
@@ -56,14 +60,26 @@ class ExtractsGenerator(keras.utils.Sequence):
             image = np_file[0]
             if self.normalization is not None:
                 image = image / self.normalization
-            if self.type == 'classification':
+            if self.task == 'classification':
                 # LABELS: [no seal, seal exists]
                 if int(r[1]) == 1:
                     label = (0, 1)
                 else:
                     label = (1, 0)
-            elif self.type == 'regression':
+            elif self.task == 'regression':
                 label = np_file[1]
+
+            if self.data_augmentation:
+                transformations = r[2]
+                if transformations[imt.INDEX_FLIP_LR]:
+                    image = imt.flip_left_to_right(image)
+                if transformations[imt.INDEX_ROTATION_ANGLE] != 0:
+                    image = imt.rotate_image(image, transformations[imt.INDEX_ROTATION_ANGLE])
+                if transformations[imt.INDEX_BRIGHTNESS] != 0:
+                    image = imt.apply_brightness(image, transformations[imt.INDEX_BRIGHTNESS])
+                if transformations[imt.INDEX_CONTRAST] != 0:
+                    image = imt.apply_contrast(image, transformations[imt.INDEX_CONTRAST])
+
             x[i, ] = image
             y[i, ] = label
         return x, y
