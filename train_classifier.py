@@ -46,7 +46,7 @@ augment_dataset = False  # Whether to apply data augmentation
 dataset_size_after_augmentation = 20000  # Including both classes, used when augment_dataset = True
 n = 6  # ResNet depth parameter
 input_shape = (256, 256, 3)  # Input image shape
-output_nodes = 5  # Number of output nodes (classes)
+output_nodes = 2  # Number of output nodes (classes)
 epochs = 60
 batch_size = 16
 loss = 'categorical_crossentropy'  # Loss function name
@@ -83,7 +83,8 @@ generator_validation = ExtractsGenerator(dataset=partitions['validation'], batch
 
 # Create InceptionResNetV2
 model = keras.applications.inception_resnet_v2.InceptionResNetV2(include_top=True, weights=None,
-                                                                 input_shape=input_shape, pooling=None, classes=2)
+                                                                 input_shape=input_shape,
+                                                                 pooling=None, classes=output_nodes)
 
 # Prepare model callbacks
 file_path = output_dir + model.name + '_' + str(dataset_size) + '_{epoch:02d}_{val_loss:.2f}.hdf5'
