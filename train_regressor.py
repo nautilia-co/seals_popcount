@@ -37,12 +37,14 @@ def lr_schedule(epoch):
 
 
 # Setting model parameters
-data_path = '/projets/reva/dwilson/mn_sea_lion_popcount/dataset/processed3/'  # TO BE SET -- ending with /
+data_path = '/projets/reva/dwilson/mn_sea_lion_popcount/dataset/processed_with_both_labels/'  # TO BE SET -- ending with /
 output_dir = ''  # TO BE SET :: empty --> current directory || ending with /
 seed = 0
 set_random_seed(seed)
 random.seed(seed)
 dataset_size = 8000
+augment_dataset = True
+dataset_size_after_augmentation = 20000
 n = 6
 input_shape = (256, 256, 3)
 output_nodes = 5
@@ -56,17 +58,21 @@ if output_dir != '':
 
 # Create data generators
 partitions = get_data_partitions(seed=seed, data_path=data_path, base_dataset_size=dataset_size,
-                                 percentage_without_seals=0, data_augmentation=True, augmented_dataset_size=20000)
+                                 percentage_without_seals=0, data_augmentation=augment_dataset,
+                                 augmented_dataset_size=dataset_size_after_augmentation)
 print('Training: ' + str(len(partitions['train'])))
 print('Validation: ' + str(len(partitions['validation'])))
 print('Test: ' + str(len(partitions['test'])))
 
 generator_train = ExtractsGenerator(dataset=partitions['train'], batch_size=batch_size, x_shape=input_shape,
-                                    y_size=output_nodes, normalization=None, task='regression')
+                                    y_size=output_nodes, normalization=None, task='regression',
+                                    data_augmentation=augment_dataset)
 generator_test = ExtractsGenerator(dataset=partitions['test'], batch_size=batch_size, x_shape=input_shape,
-                                   y_size=output_nodes, normalization=None, task='regression')
+                                   y_size=output_nodes, normalization=None, task='regression',
+                                   data_augmentation=augment_dataset)
 generator_validation = ExtractsGenerator(dataset=partitions['validation'], batch_size=batch_size, x_shape=input_shape,
-                                         y_size=output_nodes, normalization=None, task='regression')
+                                         y_size=output_nodes, normalization=None, task='regression',
+                                         data_augmentation=augment_dataset)
 
 # Create model
 # resnet = ResNet(final_activation='sigmoid', n=n,
