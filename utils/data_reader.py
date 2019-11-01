@@ -3,6 +3,7 @@ import random
 import math
 import utils.image_transformations as imt
 import itertools
+import copy
 
 
 def __augment_list(lst):
@@ -17,12 +18,14 @@ def __augment_list(lst):
         # tuple indices defined in image_transformations.py :: (flip_lr, rotation, brightness, contrast)
         # tuple used in generator.py since 'r' here only includes a path to .npy file and its corresponding label
         for tc in transformation_combinations:
-            augmented.append(r.append((
+            nr = copy.deepcopy(r)
+            nr.append((
                 tc[imt.INDEX_FLIP_LR],
                 tc[imt.INDEX_ROTATION_ANGLE],
                 tc[imt.INDEX_BRIGHTNESS],
                 tc[imt.INDEX_CONTRAST]
-            )))
+            ))
+            augmented.append(nr)
     return augmented
 
 

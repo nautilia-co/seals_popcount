@@ -3,6 +3,8 @@ import keras
 from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler, CSVLogger
 from keras.callbacks import ReduceLROnPlateau
+from keras.layers import Flatten, Dense
+from keras.models import Model
 import numpy as np
 import random
 from tensorflow import set_random_seed
@@ -67,15 +69,18 @@ generator_validation = ExtractsGenerator(dataset=partitions['validation'], batch
                                          y_size=output_nodes, normalization=None, task='regression')
 
 # Create model
-resnet = ResNet(final_activation='sigmoid', n=n,
-                input_shape=input_shape, output_nodes=output_nodes)
-model = resnet.create_model()
+# resnet = ResNet(final_activation='sigmoid', n=n,
+#                 input_shape=input_shape, output_nodes=output_nodes)
+# model = resnet.create_model()
 
 # model = keras.applications.vgg19.VGG19(weights=None, input_shape=input_shape,
 #                                        include_top=True, pooling=None, classes=2)
 
-# model = keras.applications.inception_resnet_v2.InceptionResNetV2(include_top=True, weights=None,
-#                                                                  input_shape=input_shape, pooling=None, classes=2)
+model = keras.applications.inception_resnet_v2.InceptionResNetV2(include_top=True, weights=None,
+                                                                 input_shape=input_shape, pooling=None, classes=2)
+x = Flatten()(model.output)
+x = Dense(output_nodes, activation='sigmoid')(x)
+model = Model(inputs=model.inputs, outputs=x, name=model.name)
 loss = 'mean_squared_error'
 
 print('Model: ' + model.name)
