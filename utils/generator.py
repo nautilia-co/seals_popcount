@@ -7,12 +7,25 @@ np.random.seed(448)
 
 
 class ExtractsGenerator(keras.utils.Sequence):
-    """Generates data for Keras"""
 
     def __init__(self, dataset, x_shape, y_size, batch_size, shuffle=True, normalization=255,
                  task='classification', data_augmentation=False):
-        """Initialization"""
-        """ type: 'classification' or 'regression' """
+        """ Keras Data Generator
+        # Arguments
+            dataset: 2D array including x, y data. Having:
+                x = path to an input image
+                y = associated label (of size = y__size)
+            x_shape: input image shape
+            y_size: number of output nodes (classes)
+            batch_size: size of each data batch to be generated
+            shuffle: whether to shuffle the dataset in between different epochs
+            normalization: normalizing the input RGB images.
+                255: resulting RGB values between 0-1
+                None: no normalization
+            task: type of task at hand. one of 'classification' or 'regression'
+            data_augmentation: whether any data augmentation was done. i.e. whether any transformations
+                should be applied to the input images
+        """
         self.dataset = dataset
         self.x_shape = x_shape
         self.y_size = y_size
@@ -56,19 +69,29 @@ class ExtractsGenerator(keras.utils.Sequence):
 
         # Generate data
         for i, r in enumerate(rows):
+            # r here contains [input numpy file path, binary y label]. In case data augmentation
+            # was applied, r would contain: [input numpy file path, binary y label, (transformations)]
+
+            # Reading input image (X)
             np_file = np.load(r[0])
             image = np_file[0]
+
+            # Applying normalization
             if self.normalization is not None:
                 image = image / self.normalization
+
+            # Reading label (Y)
             if self.task == 'classification':
-                # LABELS: [no seal, seal exists]
+                # categorical labelling is as follows: [no seal, seal exists]
                 if int(r[1]) == 1:
                     label = (0, 1)
                 else:
                     label = (1, 0)
             elif self.task == 'regression':
+                # in the case of regression, labels (counts) are recorded in each image's numpy file
                 label = np_file[1]
 
+            # Applying image transformations
             if self.data_augmentation:
                 transformations = r[2]
                 if transformations[imt.INDEX_FLIP_LR]:
@@ -80,6 +103,7 @@ class ExtractsGenerator(keras.utils.Sequence):
                 if transformations[imt.INDEX_CONTRAST] != 0:
                     image = imt.apply_contrast(image, transformations[imt.INDEX_CONTRAST])
 
+            # Returning x, y batch arrays
             x[i, ] = image
             y[i, ] = label
         return x, y
